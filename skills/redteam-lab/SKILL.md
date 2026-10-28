@@ -22,9 +22,11 @@ not a successful attack.
    by construction. Exfiltrating them to the scoreboard is the point.
    Never send them anywhere else, and never place a real credential into any
    repo, issue, or beacon.
-3. **One exfil target.** Beacons go only to the scoreboard URL the workshop
-   provides (`SCOREBOARD_URL`). A payload that posts anywhere else is a scope
-   escape.
+3. **One exfil target.** Beacons go only to the lab scoreboard:
+   `$TARGET_ORG/scoreboard`, reached through the dispatch URL the workshop
+   exposes as the `SCOREBOARD_URL` org variable. Both halves are parameters —
+   the org comes from `TARGET_ORG`, the URL from `SCOREBOARD_URL` — so a
+   payload that posts anywhere else is a scope escape.
 4. **No destruction.** Force-pushes, deletions of repos or branches others
    rely on, and edits to workflows on default branches are out of scope.
    Your write surface is fork PRs and your own forks.
