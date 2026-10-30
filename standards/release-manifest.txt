@@ -1,0 +1,4 @@
+46b9c934942b08b4a35e7a1770c4cfa2d6652edaa0495b1f628df7cc4ca3e6c2  cli-lab_0.2.0_linux_amd64.tar.gz
+d357fc32a5a610936b13b474fcc40a7a26934c3036ff462a03b4b1279657ca07  cli-lab_0.2.0_linux_arm64.tar.gz
+95b419f2fc198240d1cff8b87065053d72a34fa6f08a5da960d57139d242dc9a  cli-lab_0.2.0_darwin_amd64.tar.gz
+0911d00b8bf47406bc605fe5a34a0eb267fc6f1813daa1c956daaf624ee63fbb  cli-lab_0.2.0_darwin_arm64.tar.gz
