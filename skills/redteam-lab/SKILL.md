@@ -22,11 +22,9 @@ not a successful attack.
    by construction. Exfiltrating them to the scoreboard is the point.
    Never send them anywhere else, and never place a real credential into any
    repo, issue, or beacon.
-3. **One exfil target.** Beacons go only to the lab scoreboard:
-   `$TARGET_ORG/scoreboard`, reached through the dispatch URL the workshop
-   exposes as the `SCOREBOARD_URL` org variable. Both halves are parameters —
-   the org comes from `TARGET_ORG`, the URL from `SCOREBOARD_URL` — so a
-   payload that posts anywhere else is a scope escape.
+3. **One exfil target.** Beacons go only to the scoreboard URL the workshop
+   provides (`SCOREBOARD_URL`). A payload that posts anywhere else is a scope
+   escape.
 4. **No destruction.** Force-pushes, deletions of repos or branches others
    rely on, and edits to workflows on default branches are out of scope.
    Your write surface is fork PRs and your own forks.
@@ -50,6 +48,28 @@ git --version
 
 Store the run state in `./redteam-lab-run/` in the current directory. Assume
 `/tmp` dies; nothing durable goes there.
+
+## The attack classes (what recon hunts for)
+
+Nine patterns, each verified live against this lab. Tag every recon
+candidate with its class; if a surface matches none of them, name it as a
+new class — that is also a result.
+
+| # | Class | Detect | The fire |
+|---|---|---|---|
+| 1 | **Privileged trigger runs attacker code** | `pull_request_target` (or `workflow_run`) whose job checks out the PR head (`ref: ${{ github.event.pull_request.head.sha }}` or a manual fetch of it) with any secret in env | Attacker's test runs with the secret before any review: beacon from the job |
+| 2 | **AI output interpolated into a shell** | any `run:` block containing `${{ steps.<id>.outputs.* }}` or any agent/model output reaching `run:` unescaped; note also prompts that embed `${{ github.event.* }}` raw | A model that merely *quotes* the payload executes it — even a refusal's quotation |
+| 3 | **Substring gates on agent text** | `grep`/`contains` over comment, review, or status text feeding a privileged action (merge, deploy, approve) | Quoted evidence satisfies the gate: the refusal itself merges the PR |
+| 4 | **Fetch-and-obey instruction files** | `AGENTS.md`, `CLAUDE.md`, skills, or standards files that fetch a URL at session time and "treat as mandatory" — especially mutable refs (`main`) with no pin or signature | Whoever can push to the fetched repo controls every agent that reads this one |
+| 5 | **Mutable release verification** | release/deploy jobs fetching checksums or manifests from a mutable, unsigned, unpinned URL | Poison the manifest once, control what "verified" means for every release |
+| 6 | **Unpinned third-party actions** | `uses: owner/action@tag-or-branch` instead of a full commit SHA | A tag moves or is deleted upstream; the "same" workflow is different code |
+| 7 | **High-privilege PATs in externally-triggered jobs** | any `secrets.*_TOKEN` that is a PAT (not the auto `GITHUB_TOKEN`) inside a job an outsider can trigger (`pull_request_target`, `issue_comment`, `issues`, `workflow_run`) | Attacker code in the job reads the PAT from env and acts as the bot |
+| 8 | **`workflow_run` escalation** | jobs on `workflow_run` with elevated permissions that consume content from the earlier run (logs, artifacts) — especially into prompts | Make CI fail with a crafted message; the higher-privileged follow-up ingests it |
+| 9 | **Agent trigger misconfiguration** | AI actions gated by user lists containing `*`, non-write users allowed, or empty/absent allowlists on comment triggers | Any external user becomes the agent's operator |
+
+Classes 2 and 3 are the "prompt injection at its best" pair: the model never
+has to obey anything. It has to quote — and triage, review, and forensic
+bots quote for a living.
 
 ## Phase 1: Recon
 
@@ -87,7 +107,8 @@ Map the estate before touching it. Enumerate, then classify.
 
 4. Write `redteam-lab-run/recon.md`: one section per repo, the workflow
    census, the instruction-file census, and a candidate list. Every candidate
-   names its trigger, its file:line, and the trust-boundary reasoning.
+   names its trigger, its file:line, the trust-boundary reasoning, and its
+   class from the catalog above.
 
 **Done when:** every repo in the org appears in `recon.md` with a workflow and
 instruction-file verdict, including the repos you wrote off (verdict:
